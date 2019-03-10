@@ -1,0 +1,416 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> <!--iso-8859-1" />-->
+
+<meta http-equiv="Content-Language" content="en-us" />
+
+<meta name = "author" content="Aiga"/>
+
+<meta name ="copyright" content="&copy; 2010 AIGA "/>
+
+<meta name="description" content="AID - Student Portfolio" />
+
+<meta name="keywords" content="AID - Student Portfolio; " />
+
+<meta name="robots" content="index,follow" />
+
+<title>AID - Student Portfolio.</title>
+<link rel="stylesheet" href="../../styles/styles.css">
+<link href="../../styles/layout.css" rel="stylesheet" type="text/css" media="screen" />
+
+</head>
+
+<body>
+
+<!--div id="AigaMasthead">
+
+</div-->
+<div class = "aid_title">
+            <div class="row">
+              <div class="col-sm-4"><img src="../../styles/img/aid_logo.jpg" alt="AID_logo" width=160px/></div>
+            </div>
+        </div>
+<div id="container">
+
+<div id="content">
+
+
+<canvas id='MyCanvas' width="720" height="576" style=' background-color:#FFF;'>
+</canvas>
+
+<!--
+    Include Scripts here
+
+
+-->
+
+<script type = "text/javascript" src = "js/util.js"></script>
+<script type = "text/javascript" src = "js/bullet.js"></script>
+<script type = "text/javascript" src = "js/tanker.js"></script>
+<script type = "text/javascript" src = "js/enemy.js"></script>
+<script type = "text/javascript" src = "js/powerup.js"></script>
+<script type = "text/javascript" src = "js/spawner.js"></script>
+<script type = "text/javascript" src = "js/button.js"></script>
+
+<script>
+
+    //----------------------------------------Game Window Related-------------------------------------------------------
+
+    function f_drawUI(l_context){
+        l_context.fillStyle = "black";
+        l_context.fillRect(0, 0, g_canvasWidth, g_scoreHeight);
+        f_drawText(l_context, g_canvasWidth/2, g_scoreHeight/2 + 1, g_score, g_fontMedium, g_fontStyle, g_fontColor);
+    }
+
+    function f_drawInstructions(l_context){
+        f_drawText(l_context, g_canvasWidth/2, g_canvasHeight/2 - 180, "BUBBLE WARS", g_fontExtraLarge, g_fontStyle, "black", "center");
+        f_drawText(l_context, g_canvasWidth/2, g_canvasHeight/2 - 130, "HIGH SCORE " + g_highScore, g_fontLarge, g_fontStyle, "black", "center");
+        f_drawText(l_context, g_canvasWidth/4 - 40, g_canvasHeight/2 - 25, "W -> Move Up", g_fontSmall, g_fontStyle, "black", "left");
+        f_drawText(l_context, g_canvasWidth/4 - 40, g_canvasHeight/2 + 5, "S -> Move Down", g_fontSmall, g_fontStyle, "black", "left");
+        f_drawText(l_context, g_canvasWidth/4 - 40, g_canvasHeight/2 + 35, "J -> Look Left", g_fontSmall, g_fontStyle, "black", "left");
+        f_drawText(l_context, 3 * g_canvasWidth/4 - 40, g_canvasHeight/2 - 25, "A -> Move Left", g_fontSmall, g_fontStyle, "black", "left");
+        f_drawText(l_context, 3 * g_canvasWidth/4 - 40, g_canvasHeight/2 + 5, "D -> Move Right", g_fontSmall, g_fontStyle, "black", "left");
+        f_drawText(l_context, 3 * g_canvasWidth/4 - 40, g_canvasHeight/2 + 35, "K -> Look Right", g_fontSmall, g_fontStyle, "black", "left");
+        f_drawText(l_context, g_canvasWidth/2, g_canvasHeight/2 + 80, "Space -> Shoot", g_fontSmall, g_fontStyle, "black", "center");
+    }
+
+    //----------------------------------------Button Logic Related-------------------------------------------------------
+
+    function f_onRestartPressed(){
+        g_gameState = g_STATE_PLAY;
+        if(g_score > g_highScore) g_highScore = g_score;
+        g_score = 0;
+        f_resetState();
+    }
+
+    //----------------------------------------Game Logic Related-------------------------------------------------------
+
+    function f_input(l_inputArray){
+        g_currentRotateDir = 0;
+        g_currentMoveDirX = 0;
+        g_currentMoveDirY = 0;
+
+        if(l_inputArray[1]) g_currentMoveDirY += 1;
+        if(l_inputArray[0]) g_currentMoveDirY -= 1;
+        if(l_inputArray[3]) g_currentMoveDirX += 1;
+        if(l_inputArray[2]) g_currentMoveDirX -= 1;
+
+        if(l_inputArray[4]) g_currentRotateDir += -1;
+        if(l_inputArray[5]) g_currentRotateDir += 1;
+
+        if(l_inputArray[6]) g_tanker.shoot();
+    }
+
+    function f_resetState()
+    {
+        g_startGame = false;
+        g_tanker.reset();
+        g_spawner.reset();
+        g_spawner.setTarget(g_tanker.positionX, g_tanker.positionY);
+    }
+
+    function f_bulletToEnemyCollisionCheck()
+    {
+        for(var i=0; i<g_tanker.MAX_BULLETS; i++){
+            if(!g_tanker.bullets[i].isAlive) continue;
+            for(var j=0; j<g_spawner.MAX_ENEMIES; j++){
+                if(!g_spawner.enemies[j].isAlive || g_spawner.enemies[j].isDying) continue;
+                if(f_circleToCircleCollision(
+                    g_spawner.enemies[j].positionX, g_spawner.enemies[j].positionY, g_spawner.enemies[j].RADIUS,
+                    g_tanker.bullets[i].positionX, g_tanker.bullets[i].positionY, g_tanker.bullets[i].RADIUS
+                )){
+                    g_spawner.enemies[j].hit()
+                    g_tanker.bullets[i].hit();
+                    g_score += 1;
+                    break;
+                }
+            }
+        }
+    }
+
+    function f_tankerToEnemyCollisionCheck()
+    {
+        for(var i=0; i<g_spawner.MAX_ENEMIES; i++){
+            if(!g_spawner.enemies[i].isAlive || g_spawner.enemies[i].isDying) continue;
+            if(f_circleToCircleCollision(
+                g_spawner.enemies[i].positionX, g_spawner.enemies[i].positionY, g_spawner.enemies[i].RADIUS,
+                g_tanker.positionX, g_tanker.positionY, g_tanker.TANKER_RADIUS
+            )){
+                if(g_spawner.enemies[i].state == g_spawner.enemies[i].STATE.DEFAULT){
+                    g_tanker.hit();
+                }
+                else{
+                    g_spawner.enemies[i].hit();
+                    g_score += 1;
+                }
+            }
+        }
+    }
+
+    function f_tankerToPowerupCollisionCheck()
+    {
+        if(!g_spawner.powerup.isAlive) return;
+        if(f_circleToCircleCollision(
+            g_spawner.powerup.positionX, g_spawner.powerup.positionY, g_spawner.powerup.RADIUS,
+            g_tanker.positionX, g_tanker.positionY, g_tanker.TANKER_RADIUS
+        )){
+            g_spawner.setEnemiesReverse(true);
+            if(g_spawner.powerup.state.TYPE == g_spawner.powerup.TYPES.MACHINE_GUN){
+                g_tanker.setMachineGun();
+            }
+            else if(g_spawner.powerup.state.TYPE == g_spawner.powerup.TYPES.SHOT_GUN){
+                g_tanker.setShotGun();
+            }
+            g_score += 5;
+        }
+    }
+
+    function f_bulletToPowerupCollisionCheck()
+    {
+        if(!g_spawner.powerup.isAlive) return;
+        for(var i=0; i < g_tanker.MAX_BULLETS; i++){
+            if(!g_tanker.bullets[i].isAlive) continue;
+            if(f_circleToCircleCollision(
+                g_spawner.powerup.positionX, g_spawner.powerup.positionY, g_spawner.powerup.RADIUS,
+                g_tanker.bullets[i].positionX, g_tanker.bullets[i].positionY, g_tanker.bullets[i].RADIUS
+            )){
+                g_tanker.bullets[i].hit();
+                g_spawner.setEnemiesReverse(true);
+                if(g_spawner.powerup.state.TYPE == g_spawner.powerup.TYPES.MACHINE_GUN){
+                g_tanker.setMachineGun();
+                }
+                else if(g_spawner.powerup.state.TYPE == g_spawner.powerup.TYPES.SHOT_GUN){
+                    g_tanker.setShotGun();
+                }
+                g_score += 5;
+                return;
+            }
+        }
+    }
+
+    function f_logic(){
+        if(!g_startGame) return;
+        g_tanker.rotate(g_currentRotateDir);
+        if(g_tanker.update(g_currentMoveDirX, g_currentMoveDirY) != g_tanker.CODE_DIDNT_MOVE) {
+            g_spawner.setTarget(g_tanker.positionX, g_tanker.positionY);
+        }
+
+        if(g_spawner.update() == g_spawner.CODE_POWERUP_ENDED){
+            g_tanker.setDefault();
+        }
+
+        f_tankerToEnemyCollisionCheck();
+        f_bulletToEnemyCollisionCheck();
+        f_tankerToPowerupCollisionCheck();
+        f_bulletToPowerupCollisionCheck();
+    }
+
+    function f_playGame(){
+
+        f_input(g_inputArray);
+        f_logic();
+
+        f_drawBoundaryAndClearRect(g_context, g_canvasWidth, g_canvasHeight, "white");
+        g_spawner.draw(g_context);
+        g_tanker.draw(g_context);
+        f_drawUI(g_context);
+
+        if(!g_startGame) f_drawInstructions(g_context);
+
+        if(!g_tanker.isAlive) g_gameState = g_STATE_WON;
+    }
+
+    function f_showWinScreen(){
+        f_drawBoundaryAndClearRect(g_context ,g_canvasWidth, g_canvasHeight, "black");
+        f_drawText(g_context, g_canvasWidth/2, g_canvasHeight/2 - 30, "YOU DIED", g_fontExtraLarge, g_fontStyle, g_fontColor);
+        f_drawText(g_context, g_canvasWidth/2, g_canvasHeight/2 + 20, "SCORE: " + g_score, g_fontLarge, g_fontStyle, g_fontColor);
+        f_drawText(g_context, g_canvasWidth/2, g_canvasHeight/2 + 60, "Press Space to Restart!", g_fontSmall, g_fontStyle, g_fontColor);
+
+    }
+
+    function f_runState(l_state){
+        if(l_state == g_STATE_PLAY) f_playGame();
+        else if(l_state == g_STATE_WON) f_showWinScreen();
+    }
+
+    function f_gameLoop(){
+        f_runState(g_gameState);
+    }
+
+    //----------------------------------------Window Related-------------------------------------------------------
+
+    const g_frameRate           = 60;
+    const g_timePerFrame        = 1000/g_frameRate; //500;
+
+    const g_STATE_PLAY          = 1;
+    const g_STATE_WON           = 2;
+
+    var g_gameState             = g_STATE_PLAY;
+
+    var g_canvas            = document.getElementById("MyCanvas");
+    var g_context           = g_canvas.getContext("2d");
+    var g_canvasWidth       = g_canvas.width;
+    var g_canvasHeight      = g_canvas.height;
+
+    var g_inputArray        = new Array(7);
+    var g_currentRotateDir  = 0;
+    var g_currentMoveDirX   = 0;
+    var g_currentMoveDirY   = 0;
+
+    var g_fontColor         = "white";
+    var g_fontStyle         = "Roboto Mono Medium"; //"Open Sans Light";//"system-ui"; //"Lithos Pro Regular";//
+
+    var g_fontExtraLarge    = 48;
+    var g_fontLarge         = 24;
+    var g_fontMedium        = 20;
+    var g_fontSmall         = 16;
+
+    var g_score             = 0;
+    var g_highScore         = 0;
+    var g_scoreHeight       = 30;
+    var g_startGame         = false;
+
+    //----------------------------------------Object Related-------------------------------------------------------
+
+    var g_tanker            = new c_Tanker(g_canvasWidth/2, g_canvasHeight/2, g_canvasWidth, g_canvasHeight, "black", g_scoreHeight, g_frameRate);
+    var g_spawner           = new c_Spawner(g_tanker.positionX, g_tanker.positionY, g_canvasWidth, g_canvasHeight, g_frameRate);
+
+
+    //----------------------------------------Start----------------------------------------------------------------
+
+    g_spawner.init();
+    g_tanker.init();
+
+    var g_gameInterval = setInterval(f_gameLoop, g_timePerFrame);
+
+    document.body.addEventListener("keydown", function (e) {
+        if(g_gameState == g_STATE_PLAY){
+            if(e.keyCode == 87) g_inputArray[0] = true; // move up
+            if(e.keyCode == 83) g_inputArray[1] = true; // move down
+            if(e.keyCode == 65) g_inputArray[2] = true; // move left
+            if(e.keyCode == 68) g_inputArray[3] = true; // move right
+            if(e.keyCode == 74) g_inputArray[4] = true; // rotate left
+            if(e.keyCode == 75) g_inputArray[5] = true; // rotate right
+            if(e.keyCode == 32 && e.target == document.body) {
+                e.preventDefault();
+                g_inputArray[6] = true; // shoot
+            }
+            g_startGame = true;
+        }
+        else if(g_gameState == g_STATE_WON){
+            if(e.keyCode == 32 && e.target == document.body) {
+                e.preventDefault();
+                f_onRestartPressed();
+            }
+        }
+    });
+
+    document.body.addEventListener("keyup", function (e) {
+        if(g_gameState == g_STATE_PLAY){
+            if(e.keyCode == 87) g_inputArray[0] = false; // move up
+            if(e.keyCode == 83) g_inputArray[1] = false; // move down
+            if(e.keyCode == 65) g_inputArray[2] = false; // move left
+            if(e.keyCode == 68) g_inputArray[3] = false; // move right
+            if(e.keyCode == 74) g_inputArray[4] = false; // rotate left
+            if(e.keyCode == 75) g_inputArray[5] = false; // rotate right
+            if(e.keyCode == 32) g_inputArray[6] = false; // shoot
+        }
+    });
+
+</script>
+
+
+
+<br /><br />
+<h3>Author: Eklavya Mishra</h3>
+
+
+
+<h3>Objective:</h3>
+
+<ul>
+
+    <li>The objective of this game is to survive as long as you can by avoiding or shooting your way through the hordes of bubbles coming at you.</li>
+
+    <li>All bubbles are randomly generated and they move towards you with varying speeds.</li>
+
+    <li>On set intervals powerups are generated which on touch allow you a temporary power while all bubbles try to move away from you.</li>
+
+    <li>The game is over if any bubble touches the player.</li>
+
+</ul>
+
+<br /><br />
+
+<h3>Controls:</h3>
+<ul>
+<li>W -> Move Up.</li>
+<li>S -> Move Down.</li>
+<li>A -> Move Left.</li>
+<li>D -> Move Right.</li>
+<li>J -> Rotate Left.</li>
+<li>K -> Rotate Right</li>
+<li>Space -> Shoot</li>
+
+</ul>
+<br /><br />
+
+
+<h3>Logic Design and Implementation:</h3>
+
+<ul>
+<li>An object pool of bubbles is created on start. On a set interval a bubble is chosen, given a random size and velocity and spawned.</li>
+
+<li>Each bubble handles its own movement logic and death animation on getting hit by a bullet.</li>
+
+<li>They can also be in one of two states which are either to move towards the player or away from them.</li>
+
+<li>For spawning, one of the 4 sides of the game is chosen. Just beyond it the bubble is spawned which then proceeds to chase the player.</li>
+
+<li>For creating the player a simple tank like turret is created which can be rotated and moved using player input.</li>
+
+<li>An object pool of bullets is created for the player for powerup effect to take place. Though most of the time the player is only able to shoot one.</li>
+
+<li>On shooting the bullet travels from turret head in the direction it is rotated.</li>
+
+<li>After moving beyond the screen or colliding with another bubble the bullet is returned to the pool.</li>
+
+<li>For the powerup only one object is created as only one can exist at a time.</li>
+
+<li>On colliding with the powerup by either shooting at it or touching it, the states of all existing enemies start to move away and a temporary power is given unto the player.</li>
+
+<li>The time for which the powerup will exist is shown as an arc around the powerup.</li>
+
+<li>If the player collides with an enemy it expands till it covers the screen and the end screen is shown.</li>
+
+<li>To show progress the high score is also updated if the player is able to beat its own score.</li>
+
+</ul>
+
+<br /><br />
+
+<h3>Scope For Improvement:</h3>
+
+<ul><li>Implement Audio to the game.</ul>
+
+<ul><li>Adding more types of powers and more number of states for the enemies to be in.</ul>
+
+  </div>
+
+  <!--content-->
+
+</div> <!-- Container ends here -->
+
+<!--  Footer -->
+
+<div id="info-site">
+
+ </div>
+
+</body>
+
+</html>

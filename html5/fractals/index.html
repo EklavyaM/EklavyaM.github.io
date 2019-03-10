@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> <!--iso-8859-1" />-->
+
+<meta http-equiv="Content-Language" content="en-us" />
+
+<meta name = "author" content="Aiga"/>
+
+<meta name ="copyright" content="&copy; 2010 AIGA "/>
+
+<meta name="description" content="AID - Student Portfolio" />
+
+<meta name="keywords" content="AID - Student Portfolio; " />
+
+<meta name="robots" content="index,follow" />
+
+<title>AID - Student Portfolio.</title>
+<link rel="stylesheet" href="../../styles/styles.css">
+<link href="../../styles/layout.css" rel="stylesheet" type="text/css" media="screen" />
+
+</head>
+
+<body>
+
+<!--div id="AigaMasthead">
+
+</div-->
+<div class = "aid_title">
+            <div class="row">
+              <div class="col-sm-4"><img src="../../styles/img/aid_logo.jpg" alt="AID_logo" width=160px/></div>
+            </div>
+        </div>
+<div id="container">
+
+<div id="content">
+
+
+<canvas id='MyCanvas' width="720" height="576" style=' background-color:#FFF;'>
+</canvas>
+
+<!--
+    Include Scripts here
+
+
+-->
+
+<script type = "text/javascript" src = "js/util.js"></script>
+<script type = "text/javascript" src = "js/animated_circles.js"></script>
+<script type = "text/javascript" src = "js/recursive_circles_animated.js"></script>
+
+<script>
+
+    //----------------------------------------Game Window Related-------------------------------------------------------
+
+    function f_gameLoop(){
+        if(!toRefresh) return;
+        f_drawBoundaryAndClearRect(g_context, g_canvasWidth, g_canvasHeight, g_bgColor);
+        g_animatedRecursiveCircle.draw(g_context);
+
+        g_counter++;
+        console.log("Drawing");
+        if(g_counter * g_animSpeed * g_timePerFrame > 6.28 * g_maxRecursion) {
+            toRefresh = false;
+            console.log("Stop Drawing");
+        }
+     }
+
+    //----------------------------------------Logic Related-------------------------------------------------------
+
+    function f_createNew()
+    {
+        console.log("Start Drawing");
+        toRefresh = true;
+        g_counter = -1;
+        g_strokeColor = f_getRandomColor();
+        g_sizeFactor = (Math.random() < 0.5) ? Math.random() * 0.5 + 0.12 : Math.random() * 0.079 + 0.92;
+        g_initialRadius = g_canvasHeight/2.5 * (( 1 - g_sizeFactor) / (1 - Math.pow(g_sizeFactor, g_maxRecursion))); // replace g_canvasHeight by g_canvasWidth if its smaller
+        g_animatedRecursiveCircle = new c_RecursiveCirclesAnimated(g_canvasWidth/2, g_canvasHeight/2, g_initialRadius,
+                                                                        g_animSpeed, g_strokeColor, g_timePerFrame,
+                                                                        g_sizeFactor);
+    }
+
+    //----------------------------------------Window Related-------------------------------------------------------
+
+    var g_canvas        = document.getElementById("MyCanvas");
+    var g_context       = g_canvas.getContext("2d");
+    var g_canvasWidth   = g_canvas.width;
+    var g_canvasHeight  = g_canvas.height;
+
+    var g_frameRate     = 60;
+    var g_timePerFrame  = 1000/g_frameRate;
+    var g_maxRecursion  = 6; // change in recursive_circles_animated too
+
+    var g_initialRadius = 0;
+    var g_sizeFactor    = 0;
+    var g_animSpeed     = 0.015;
+    var g_strokeColor   = f_getRandomColor();
+    var g_bgColor       = "#1D1D1D";
+    var g_counter       = 0;
+    var toRefresh       = true;
+
+    //----------------------------------------Object Related-------------------------------------------------------
+
+    var g_animatedRecursiveCircle = null;
+
+    //----------------------------------------Start----------------------------------------------------------------
+
+    f_createNew();
+
+    var g_gameInterval = setInterval(f_gameLoop, g_timePerFrame);
+
+    document.body.addEventListener("keydown", function (e) {
+        if(e.keyCode == 32 && e.target == document.body) {
+            e.preventDefault();
+        }
+    });
+
+    document.body.addEventListener("keyup", function (e) {
+        if(e.keyCode == 32) {
+            f_createNew();
+        }
+    });
+
+</script>
+
+<br /><br />
+<h3>Author: Eklavya Mishra</h3>
+
+
+
+<h3>Objective:</h3>
+
+<ul>
+
+    <li>To create animated circular fractals for awesome visual patterns.</li>
+
+</ul>
+
+<br /><br />
+
+<h3>Controls:</h3>
+<ul>
+<li>Space -> Generate New Pattern</li>
+
+</ul>
+<br /><br />
+
+
+<h3>Logic Design and Implementation:</h3>
+
+<ul>
+<li>Each circle handles its own animation.</li>
+
+<li>On creating a recursive circle, it creates an animated circle for itself first then creates other recursive circles neighbor to it till a pre-defined limit is reached.</li>
+
+<li>For simplicity the circles at the base case dont draw their neighbors.</li>
+
+<li>In a draw call each circle first draws itself and then its neighbors.</li>
+
+<li>A size factor is passed to the top level preferably in the range of [0, 1) which sets the radius of its neighboring circles by mutiplying the size factor by its own radius.</li>
+
+</ul>
+
+<br /><br />
+
+  </div>
+
+  <!--content-->
+
+</div> <!-- Container ends here -->
+
+<!--  Footer -->
+
+<div id="info-site">
+
+ </div>
+
+</body>
+
+</html>

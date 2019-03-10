@@ -1,0 +1,127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> <!--iso-8859-1" />-->
+
+<meta http-equiv="Content-Language" content="en-us" />
+
+<meta name = "author" content="Aiga"/>
+
+<meta name ="copyright" content="&copy; 2010 AIGA "/>
+
+<meta name="description" content="AID - Student Portfolio" />
+
+<meta name="keywords" content="AID - Student Portfolio; " />
+
+<meta name="robots" content="index,follow" />
+
+<title>AID - Student Portfolio.</title>
+<link rel="stylesheet" href="../../../../styles/styles.css">
+<link href="../../../../styles/layout.css" rel="stylesheet" type="text/css" media="screen" />
+
+</head>
+
+<body>
+
+<!--div id="AigaMasthead">
+
+</div-->
+<div class = "aid_title">
+            <div class="row">
+              <div class="col-sm-4"><img src="../../../../styles/img/aid_logo.jpg" alt="AID_logo" width=160px/></div>
+            </div>
+        </div>
+<div id="container">
+
+<div id="content">
+
+
+<canvas id='MyCanvas' width="720" height="576" style=' background-color:#FFF;'>
+</canvas>
+
+<!--
+    Include Scripts here
+
+
+-->
+
+<br /><br />
+<h3>Author: Eklavya Mishra</h3>
+
+
+
+<h3>Objective:</h3>
+
+<ul>
+
+    <li>To create animated circular fractals for awesome visual patterns.</li>
+
+</ul>
+
+<br /><br />
+
+<h3>Controls:</h3>
+<ul>
+<li>Space -> Generate New Pattern</li>
+
+</ul>
+<br /><br />
+
+
+<h3>Logic Design and Implementation:</h3>
+
+<ul>
+<li>An object pool of bubbles is created on start. On a set interval a bubble is chosen, given a random size and velocity and spawned.</li>
+
+<li>Each bubble handles its own movement logic and death animation on getting hit by a bullet.</li>
+
+<li>They can also be in one of two states which are either to move towards the player or away from them.</li>
+
+<li>For spawning, one of the 4 sides of the game is chosen. Just beyond it the bubble is spawned which then proceeds to chase the player.</li>
+
+<li>For creating the player a simple tank like turret is created which can be rotated and moved using player input.</li>
+
+<li>An object pool of bullets is created for the player for powerup effect to take place. Though most of the time the player is only able to shoot one.</li>
+
+<li>On shooting the bullet travels from turret head in the direction it is rotated.</li>
+
+<li>After moving beyond the screen or colliding with another bubble the bullet is returned to the pool.</li>
+
+<li>For the powerup only one object is created as only one can exist at a time.</li>
+
+<li>On colliding with the powerup by either shooting at it or touching it, the states of all existing enemies start to move away and a temporary power is given unto the player.</li>
+
+<li>The time for which the powerup will exist is shown as an arc around the powerup.</li>
+
+<li>If the player collides with an enemy it expands till it covers the screen and the end screen is shown.</li>
+
+<li>Just to show progress the high score is also updated if the player is able to beat its own score.</li>
+
+</ul>
+
+<br /><br />
+
+<!-- <h3>Scope For Improvement:</h3>
+
+<ul><li>Implement Audio to the game.</ul>
+
+<ul><li>Adding more types of powers and more number of states for the enemies to be in.</ul> -->
+
+  </div>
+
+  <!--content-->
+
+</div> <!-- Container ends here -->
+
+<!--  Footer -->
+
+<div id="info-site">
+
+ </div>
+
+</body>
+
+</html>

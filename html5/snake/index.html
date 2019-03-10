@@ -1,0 +1,391 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> <!--iso-8859-1" />-->
+
+<meta http-equiv="Content-Language" content="en-us" />
+
+<meta name = "author" content="Aiga"/>
+
+<meta name ="copyright" content="&copy; 2010 AIGA "/>
+
+<meta name="description" content="AID - Student Portfolio" />
+
+<meta name="keywords" content="AID - Student Portfolio; " />
+
+<meta name="robots" content="index,follow" />
+
+<title>AID - Student Portfolio.</title>
+<link rel="stylesheet" href="../../styles/styles.css">
+<link href="../../styles/layout.css" rel="stylesheet" type="text/css" media="screen" />
+
+</head>
+
+<body>
+
+<!--div id="AigaMasthead">
+
+</div-->
+<div class = "aid_title">
+            <div class="row">
+              <div class="col-sm-4"><img src="../../styles/img/aid_logo.jpg" alt="AID_logo" width=160px/></div>
+            </div>
+        </div>
+<div id="container">
+
+<div id="content">
+
+
+<canvas id='MyCanvas' width="720" height="576" style=' background-color:#FFF;'>
+</canvas>
+
+<!--
+    Include Scripts here
+
+
+-->
+
+<script type = "text/javascript" src = "js/util.js"></script>
+<script type = "text/javascript" src = "js/button.js"></script>
+<script type = "text/javascript" src = "js/cell.js"></script>
+<script type = "text/javascript" src = "js/snake.js"></script>
+<script type = "text/javascript" src = "js/food.js"></script>
+
+<script>
+
+    //----------------------------------------Game Window Related-------------------------------------------------------
+
+    function f_drawBoundaryAndClearRect(){
+        g_context.fillStyle = g_colorBg;
+        g_context.fillRect(0,0,g_canvasWidth,g_canvasHeight);
+    }
+
+    function f_drawLine(l_pos_x, l_pos_y, l_padding){
+        g_context.fillStyle = "#BBBBBB";
+        g_context.fillRect(l_pos_x + l_padding, l_pos_y, g_canvasWidth - 2 * l_padding, 2);
+    }
+
+    function f_drawText(l_pos_x, l_pos_y, text, l_font_size = 48, l_color = "white"){
+        g_context.font = l_font_size.toString()+"px " + g_fontStyle;
+        g_context.textAlign = "center";
+        g_context.textBaseline = "middle";
+        g_context.fillStyle = l_color;
+        g_context.fillText(text, l_pos_x, l_pos_y);
+    }
+
+    function f_drawUI(){
+        g_context.fillStyle = g_colorUIBg;
+        g_context.fillRect(0, 0, g_canvasWidth, g_verticalOffset);
+        f_drawText(g_canvasWidth/4, g_fontSizeScore, "Player 1:  " + g_snake_1.score, g_fontSizeScore, g_colorSnake_1);
+        f_drawText(3*g_canvasWidth/4, g_fontSizeScore, "Player 2:  " + g_snake_2.score, g_fontSizeScore, g_colorSnake_2);
+    }
+
+    function f_drawEndScreenContents(){
+        f_drawText(g_canvasWidth/2, g_canvasHeight/2 - 50, "Player 1      " + g_snake_1.score, 32, g_colorSnake_1);
+        f_drawText(g_canvasWidth/2, g_canvasHeight/2, "Player 2      " + g_snake_2.score, 32, g_colorSnake_2);
+        g_buttonReturn.draw(g_context);
+    }
+
+    function f_drawMenuScreenContents(){
+        f_drawText(g_canvasWidth/2, 150, "SNAKE", 148, g_colorBtFontNorm);
+        g_buttonStart.draw(g_context);
+        g_buttonInstructions.draw(g_context);
+    }
+
+    function f_drawInstructionsScreenContents(){
+        f_drawText(g_canvasWidth/2, 150, "Instructions", 78, g_colorBtFontNorm);
+        f_drawText(g_canvasWidth/4, 230, "Player 1", 24, g_colorSnake_1);
+        f_drawText(3*g_canvasWidth/4, 230, "Player 2", 24, g_colorSnake_2);
+        f_drawText(g_canvasWidth/4, 270, "W -> Go Up", 16, g_colorBtFontNorm);
+        f_drawText(3*g_canvasWidth/4, 270, "Up Arrow -> Go Up", 16, g_colorBtFontNorm);
+        f_drawText(g_canvasWidth/4, 300, "S -> Go Down", 16, g_colorBtFontNorm);
+        f_drawText(3*g_canvasWidth/4, 300, "Down Arrow -> Go Down", 16, g_colorBtFontNorm);
+        f_drawText(g_canvasWidth/4, 330, "A -> Go Left", 16, g_colorBtFontNorm);
+        f_drawText(3*g_canvasWidth/4, 330, "Left Arrow -> Go Left", 16, g_colorBtFontNorm);
+        f_drawText(g_canvasWidth/4, 360, "D -> Go Right", 16, g_colorBtFontNorm);
+        f_drawText(3*g_canvasWidth/4, 360, "Right Arrow -> Go Right", 16, g_colorBtFontNorm);
+        g_buttonBack.draw(g_context);
+    }
+
+    //----------------------------------------Button Logic Related-------------------------------------------------------
+
+    function f_onRestartPressed(){
+        g_currentGameState = g_GAME_STATE_MENU;
+    }
+
+    function f_onStartPressed(){
+        g_snake_1.reset();
+        g_snake_2.reset();
+        g_food.reset();
+        g_currentGameState = g_GAME_STATE_PLAY;
+    }
+
+    function f_onInstructionsPressed(){
+        g_currentGameState = g_GAME_STATE_INST;
+    }
+
+    //----------------------------------------Game Logic Related-------------------------------------------------------
+
+
+    function f_runGame(){
+        g_food.update();
+
+        if (g_snake_1.move(g_input_array_1, g_snake_2, g_food) == g_snake_1.ERROR_DEAD
+            || (g_snake_2.move(g_input_array_2, g_snake_1, g_food) == g_snake_2.ERROR_DEAD))
+            g_currentGameState = g_GAME_STATE_END;
+
+        f_drawBoundaryAndClearRect();
+        g_snake_1.draw(g_context);
+        g_snake_2.draw(g_context);
+        g_food.draw(g_context);
+        f_drawUI();
+    }
+
+    function f_showMenu(){
+        f_drawBoundaryAndClearRect();
+        f_drawMenuScreenContents();
+    }
+
+    function f_showEndScreen(){
+        f_drawBoundaryAndClearRect();
+        f_drawUI();
+        f_drawEndScreenContents();
+    }
+
+    function f_showInstructionsScreen(){
+        f_drawBoundaryAndClearRect();
+        f_drawInstructionsScreenContents();
+    }
+
+    function f_gameLoop(){
+        if(g_currentGameState == g_GAME_STATE_PLAY){
+            f_runGame();
+        }
+        else if (g_currentGameState == g_GAME_STATE_MENU){
+            f_showMenu();
+        }
+        else if (g_currentGameState == g_GAME_STATE_END){
+            f_showEndScreen();
+        }
+        else if(g_currentGameState == g_GAME_STATE_INST){
+            f_showInstructionsScreen();
+        }
+    }
+
+
+    //----------------------------------------Window Related-------------------------------------------------------
+
+    const g_frameRate           = 30;
+    const g_timePerFrame        = 1000/g_frameRate; //500;
+
+    const g_verticalOffset      = 48;
+
+    const g_GAME_STATE_MENU     = 0;
+    const g_GAME_STATE_PLAY     = 1;
+    const g_GAME_STATE_END      = 2;
+    const g_GAME_STATE_INST     = 3;
+
+    var g_canvas            = document.getElementById("MyCanvas");
+    var g_context           = g_canvas.getContext("2d");
+    var g_canvasWidth       = g_canvas.width;
+    var g_canvasHeight      = g_canvas.height;
+    var g_canvasRect        = g_canvas.getBoundingClientRect();
+
+    var g_currentGameState  = g_GAME_STATE_MENU;
+
+    var g_fontSizeScore     = 24;
+    var g_fontStyle         = "OpenDyslexic";
+
+    var g_colorSnake_1      = "#FF0000";
+    var g_colorSnake_2      = "#0000FF";
+    var g_colorBg           = "#111111";
+    var g_colorUIBg         = "#000000";
+
+    var g_colorBtFontNorm   = "#FFFFFF";
+    var g_colorBtFontHover  = "#BBBBBB";
+
+    var g_colorTimer        = "#FFFFFF";
+
+    //----------------------------------------Object Related-------------------------------------------------------
+
+    var g_buttonReturn          = new c_Button(g_canvasWidth/2 - 150, g_canvasHeight/2 + 50,
+                                            300, 70, f_onRestartPressed, "Restart",
+                                            g_colorBg, g_colorUIBg, 24, g_fontStyle,
+                                            g_colorBtFontNorm, g_colorBtFontHover
+                                        );
+    var g_buttonStart           = new c_Button(g_canvasWidth/2 - 150, g_canvasHeight/2,
+                                            300, 70, f_onStartPressed, "Start Game",
+                                            g_colorBg, g_colorUIBg, 24, g_fontStyle,
+                                            g_colorBtFontNorm, g_colorBtFontHover
+                                        );
+    var g_buttonInstructions    = new c_Button(g_canvasWidth/2 - 150, g_canvasHeight/2 + 90,
+                                            300, 70, f_onInstructionsPressed, "Instructions",
+                                            g_colorBg, g_colorUIBg, 24, g_fontStyle,
+                                            g_colorBtFontNorm, g_colorBtFontHover
+                                        );
+    var g_buttonBack            = new c_Button(g_canvasWidth/2 - 150, g_canvasHeight/2 + 150,
+                                            300, 70, f_onRestartPressed, "Back",
+                                            g_colorBg, g_colorUIBg, 24, g_fontStyle,
+                                            g_colorBtFontNorm, g_colorBtFontHover
+                                        );
+
+
+    var g_snake_1       = new c_Snake(g_canvasWidth/2 - 200, g_canvasHeight/2, 5, g_colorSnake_1, g_canvasWidth, g_canvasHeight, g_verticalOffset);
+    var g_snake_2       = new c_Snake(g_canvasWidth/2 + 200, g_canvasHeight/2, 5, g_colorSnake_2, g_canvasWidth, g_canvasHeight, g_verticalOffset);
+    var g_food          = new c_Food(g_canvasWidth/2, g_canvasHeight/2, 16, g_canvasWidth, g_canvasHeight, g_verticalOffset, g_colorTimer, g_frameRate);
+
+    var g_input_array_1 = new Array(4);
+    var g_input_array_2 = new Array(4);
+
+    //----------------------------------------Start----------------------------------------------------------------
+
+    var g_gameInterval = setInterval(f_gameLoop, g_timePerFrame);
+
+    g_canvas.addEventListener("mousemove", function(event){
+        g_canvasRect = g_canvas.getBoundingClientRect();
+
+        if(g_currentGameState == g_GAME_STATE_END){
+            g_buttonReturn.setHovering(g_buttonReturn.hit(event.clientX - g_canvasRect.left, event.clientY - g_canvasRect.top));
+        }
+        else if(g_currentGameState == g_GAME_STATE_MENU){
+            g_buttonStart.setHovering(g_buttonStart.hit(event.clientX - g_canvasRect.left, event.clientY - g_canvasRect.top));
+            g_buttonInstructions.setHovering(g_buttonInstructions.hit(event.clientX - g_canvasRect.left, event.clientY - g_canvasRect.top));
+        }
+        else if(g_currentGameState == g_GAME_STATE_INST){
+            g_buttonBack.setHovering(g_buttonBack.hit(event.clientX - g_canvasRect.left, event.clientY - g_canvasRect.top));
+        }
+    });
+
+    g_canvas.addEventListener("click", function(event){
+        g_canvasRect = g_canvas.getBoundingClientRect();
+
+        if(g_currentGameState == g_GAME_STATE_END){
+            if(g_buttonReturn.hit(event.clientX - g_canvasRect.left, event.clientY - g_canvasRect.top)) g_buttonReturn.click();
+        }
+        else if (g_currentGameState == g_GAME_STATE_MENU){
+            if(g_buttonStart.hit(event.clientX - g_canvasRect.left, event.clientY - g_canvasRect.top)) g_buttonStart.click();
+            if(g_buttonInstructions.hit(event.clientX - g_canvasRect.left, event.clientY - g_canvasRect.top)) g_buttonInstructions.click();
+        }
+        else if (g_currentGameState == g_GAME_STATE_INST){
+            if(g_buttonBack.hit(event.clientX - g_canvasRect.left, event.clientY - g_canvasRect.top)) g_buttonBack.click();
+        }
+    });
+
+    document.body.addEventListener("keydown", function (e) {
+        if(e.keyCode == 65) g_input_array_1[0] = true;
+        if(e.keyCode == 68) g_input_array_1[1] = true;
+        if(e.keyCode == 87) g_input_array_1[2] = true;
+        if(e.keyCode == 83) g_input_array_1[3] = true;
+
+        if(e.keyCode == 37) {
+            e.preventDefault();
+            g_input_array_2[0] = true;
+        }
+        if(e.keyCode == 39) {
+            e.preventDefault();
+            g_input_array_2[1] = true;
+        }
+        if(e.keyCode == 38) {
+            e.preventDefault();
+            g_input_array_2[2] = true;
+        }
+        if(e.keyCode == 40){
+            e.preventDefault();
+            g_input_array_2[3] = true;
+        } 
+    });
+    document.body.addEventListener("keyup", function (e) {
+        if(e.keyCode == 65) g_input_array_1[0] = false;
+        if(e.keyCode == 68) g_input_array_1[1] = false;
+        if(e.keyCode == 87) g_input_array_1[2] = false;
+        if(e.keyCode == 83) g_input_array_1[3] = false;
+
+        if(e.keyCode == 37) g_input_array_2[0] = false;
+        if(e.keyCode == 39) g_input_array_2[1] = false;
+        if(e.keyCode == 38) g_input_array_2[2] = false;
+        if(e.keyCode == 40) g_input_array_2[3] = false;
+    });
+
+
+</script>
+
+<br /><br />
+<h3>Author: Eklavya Mishra</h3>
+
+<h3>Objective:</h3>
+
+<ul>
+
+    <li>There are two snakes fighting for food.</li>
+    <li>Each snake is controlled by one player.</li>
+    <li>If one snake hits its own tail it dies.</li>
+    <li>If it hits the other snake's tail it dies.</li>
+    <li>Both compete to become the apex predator.</li>
+
+</ul>
+
+<br /><br />
+
+<h3>Controls:</h3>
+<ul>
+<li>W -> Move Snake 1 Up</li>
+<li>S -> Move Snake 1 Down</li>
+<li>A -> Move Snake 1 Left</li>
+<li>D -> Move Snake 1 Right</li>
+<li>Up Arrow -> Move Snake 2 Up</li>
+<li>Down Arrow -> Move Snake 2 Down</li>
+<li>Left Arrow -> Move Snake 2 Left</li>
+<li>Right Arrow -> Move Snake 2 Right</li>
+
+
+</ul>
+<br /><br />
+
+
+<h3>Logic Design and Implementation:</h3>
+
+<ul>
+<li>The Snakes move in their classical manner with the addition of diagonal movement.</li>
+
+<li>Because of the diagonal movement, moving back is accordingly implemented.</li>
+
+<li>A Powerup is spawned immediately on start.</li>
+
+<li>The Powerup has a specific amount of time for being eaten before it spawns again on a random location.</li>
+
+<li>The Powerup applies a random buff to the snake eating it.</li>
+
+<li>One buff increases its size and one decreases it.</li>
+
+<li>Another increases its speed yet another decreases it.</li>
+
+<li>Trying to move beyond the screen or colliding with the other snake immediately ends the game.</li>
+
+</ul>
+
+<br /><br />
+
+<!-- <h3>Scope For Improvement:</h3>
+
+<ul><li>Implement Audio to the game.</ul>
+
+<ul><li>Adding more types of powers and more number of states for the enemies to be in.</ul> -->
+
+  </div>
+
+  <!--content-->
+
+</div> <!-- Container ends here -->
+
+<!--  Footer -->
+
+<div id="info-site">
+
+ </div>
+
+</body>
+
+</html>
